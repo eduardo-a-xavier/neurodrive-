@@ -16,7 +16,7 @@ from scipy.integrate import odeint
 BATERIA = {
     "voltagem_nominal": 3.7,      # V (Li-po 1S)
     "energia_total": 1.85,         # Wh
-    "capacidade_mah": 1450,        # mAh
+    "capacidade_mah": 500,        # mAh
     "resistencia_interna": 0.5,    # Ω (estimativa para Li-po)
 }
 

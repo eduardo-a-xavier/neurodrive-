@@ -51,7 +51,7 @@ class MotorDC:
        - τ_coulomb: Atrito Coulomb (constante) [N·m]
     """
     
-    def __init__(self, R=5.0, L=0.001, K_e=0.02, J=0.0001, 
+    def __init__(self, R=3.0, L=0.001, K_e=0.02, J=0.0001, 
                  b_visc=0.001, tau_coulomb=0.005):
         """
         Inicializa parâmetros do motor.
