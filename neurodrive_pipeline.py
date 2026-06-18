@@ -55,6 +55,36 @@ def iniciar_servidor_sensores():
 
 threading.Thread(target=iniciar_servidor_sensores, daemon=True).start()
 
+def iniciar_cliente_sensores_teste():
+    import urllib.request
+    import json
+    import time
+    url = "http://192.168.15.8:8000/data"
+    while True:
+        try:
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=0.5) as response:
+                data = json.loads(response.read().decode('utf-8'))
+                if isinstance(data, dict):
+                    # Parse SensorServer genérico
+                    if "accelerometer" in data:
+                        acc = data["accelerometer"]
+                        if isinstance(acc, list) and len(acc) >= 3:
+                            telemetria_ext["aceleracao_x"] = float(acc[0])
+                            telemetria_ext["aceleracao_y"] = float(acc[1])
+                            telemetria_ext["aceleracao_z"] = float(acc[2])
+                    if "location" in data:
+                        loc = data["location"]
+                        if isinstance(loc, list) and len(loc) > 2:
+                            # Tentativa de ler velocidade: costuma ser o último valor do array de location
+                            telemetria_ext["gps_speed_ms"] = float(loc[-1])
+                telemetria_ext["ultima_att"] = time.time()
+        except Exception:
+            pass
+        time.sleep(0.1)
+
+threading.Thread(target=iniciar_cliente_sensores_teste, daemon=True).start()
+
 # ==============================================================================
 #  CLASSE ASYNC IP CAMERA (Processamento Assíncrono para Mitigação de Latência)
 # ==============================================================================
