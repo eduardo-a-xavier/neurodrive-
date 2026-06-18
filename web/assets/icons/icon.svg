@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0a0a0a" rx="64"/>
+  <polygon points="256,60 440,450 72,450" fill="none" stroke="#FFD600" stroke-width="12" opacity="0.25"/>
+  <text x="256" y="348" font-family="Courier New,monospace" font-size="300" font-weight="bold"
+        fill="#FFD600" text-anchor="middle">N</text>
+</svg>

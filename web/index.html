@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>NeuroDrive</title>
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#FFD600">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NeuroDrive">
+  <link rel="apple-touch-icon" href="/assets/icons/icon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <!-- ══════════════════ NAV ══════════════════ -->
+  <nav id="nav">
+    <a class="logo" href="#dashboard">⬡ NEURODRIVE</a>
+    <div class="nav-links">
+      <a href="#dashboard">Dashboard</a>
+      <a href="#equipe">Equipe</a>
+      <a href="#galeria">Galeria</a>
+    </div>
+    <span id="status-badge" class="badge-offline">● OFFLINE</span>
+  </nav>
+
+  <!-- ══════════════════ DASHBOARD ══════════════════ -->
+  <section id="dashboard" class="section">
+    <div class="section-header">
+      <h2>DASHBOARD</h2>
+      <span class="section-sub">Telemetria em tempo real · Escala real medida: 1:30</span>
+    </div>
+
+    <!-- Gauges -->
+    <div class="gauges-row" style="margin-bottom: 16px;">
+      <div class="gauge-box">
+        <div class="gauge-label">VELOCÍMETRO</div>
+        <canvas id="speedometer" width="220" height="220"></canvas>
+      </div>
+      <div class="gauge-box">
+        <div class="gauge-label">G-METER</div>
+        <canvas id="gmeter" width="220" height="220"></canvas>
+      </div>
+      <div class="gauge-box gauge-wide">
+        <div class="gauge-label">HISTÓRICO (km/h)</div>
+        <canvas id="historico" width="500" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="dash-main">
+      <!-- Feed de vídeo -->
+      <div class="video-container">
+        <div class="video-wrap">
+          <div class="video-label">FEED AO VIVO (Duplo clique para Tela Cheia | Teclas: C, S, R, L)</div>
+          <video id="feed-video" autoplay muted playsinline style="display:none; width: 100%; height: 100%; object-fit: cover; border-radius: 12px;"></video>
+          <img id="stream" src="/video" alt="Aguardando câmera...">
+          <div id="video-overlay" class="video-overlay">
+            <span>Sem sinal de câmera</span>
+          </div>
+          <!-- HUD Overlay -->
+          <div class="hud-overlay" id="hud" style="display:none">
+            <div class="hud-corner tl"></div>
+            <div class="hud-corner tr"></div>
+            <div class="hud-corner bl"></div>
+            <div class="hud-corner br"></div>
+            <div class="hud-crosshair"></div>
+            <div class="hud-ts" id="hud-ts">--:--:--.---</div>
+            <div class="hud-rec"><div class="hud-rec-dot"></div>REC</div>
+            <div class="hud-scale">ESCALA 1:30 · NEURODRIVE</div>
+          </div>
+        </div>
+
+        <!-- Video Controls (IP inputs) -->
+        <div class="video-controls">
+          <div class="control-row">
+            <span class="ctrl-label">CÂMERA IP:</span>
+            <input type="text" id="ip-cam" class="ctrl-input" placeholder="Ex: http://192.168.1.100:81/stream">
+            <button class="ctrl-btn" onclick="connectCam()">CONECTAR</button>
+            <button class="ctrl-btn" id="btn-webcam" onclick="startWebcam()">⬤ WEBCAM</button>
+            <button class="ctrl-btn" id="btn-stop" onclick="stopFeed()" style="display:none; background: rgba(244,63,94,0.2); color: #f43f5e; border-color: #f43f5e;">■ PARAR</button>
+          </div>
+          <div class="control-row">
+            <span class="ctrl-label">TELEMETRIA:</span>
+            <input type="text" id="ip-tel" class="ctrl-input" placeholder="Padrão: /api/telemetria">
+            <button class="ctrl-btn" onclick="reconnectTelemetry()">CONECTAR</button>
+            <button class="ctrl-btn" id="btn-ia" onclick="toggleIA()" style="background: rgba(16,185,129,0.2); color: #10b981; border-color: #10b981;">IA: LIGADA</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lateral Direita (Telemetria + Minimapa) -->
+      <div class="sidebar-container">
+        <!-- Painel de telemetria -->
+        <div class="tel-panel">
+          <div class="tel-title">TELEMETRIA</div>
+
+        <div class="tel-block">
+          <div class="tel-row">
+            <span class="tel-label">VELOCIDADE</span>
+            <span class="tel-value accent" id="vel-inst">-- km/h</span>
+          </div>
+          <div class="tel-row">
+            <span class="tel-label">MÁXIMA</span>
+            <span class="tel-value magenta" id="vel-max">-- km/h</span>
+          </div>
+          <div class="tel-row">
+            <span class="tel-label">MÉDIA</span>
+            <span class="tel-value" id="vel-med">-- km/h</span>
+          </div>
+        </div>
+
+        <div class="tel-divider"></div>
+
+        <div class="tel-block">
+          <div class="tel-row">
+            <span class="tel-label">ACELERAÇÃO</span>
+            <span class="tel-value" id="acel">-- m/s²</span>
+          </div>
+          <div class="tel-row">
+            <span class="tel-label">MODO</span>
+            <span class="tel-value" id="modo">--</span>
+          </div>
+          <div class="tel-row">
+            <span class="tel-label">RASTREIO</span>
+            <span class="tel-value" id="qualidade">--</span>
+          </div>
+        </div>
+
+        <div class="tel-divider"></div>
+
+        <div class="tel-block" id="bat-block">
+          <div class="tel-title-small">SISTEMA DE ENERGIA (ESTIMADO)</div>
+          <div class="tel-row">
+            <span class="tel-label">NÍVEL (Mín 20%)</span>
+            <span class="tel-value" id="bat-nivel" style="color: #10b981;">100 %</span>
+          </div>
+          <div class="tel-row">
+            <span class="tel-label">TENSÃO (Mín 9V / Máx 12.6V)</span>
+            <span class="tel-value" id="bat-tensao">12.6 V</span>
+          </div>
+          <div class="tel-row">
+            <span class="tel-label">CORRENTE (Máx 10A)</span>
+            <span class="tel-value" id="bat-corrente">2.5 A</span>
+          </div>
+          <div class="tel-row">
+            <span class="tel-label">POTÊNCIA (Máx 120W)</span>
+            <span class="tel-value" id="bat-potencia">31.5 W</span>
+          </div>
+        </div>
+
+        <div class="tel-divider" id="sensor-sep" style="display:none"></div>
+
+        <div class="tel-block" id="sensor-block" style="display:none">
+          <div class="tel-title-small">SENSOR CELULAR</div>
+          <div class="tel-row">
+            <span class="tel-label">GPS</span>
+            <span class="tel-value cyan" id="gps-kmh">-- km/h</span>
+          </div>
+          <div class="tel-row">
+            <span class="tel-label">ACCEL Y</span>
+            <span class="tel-value cyan" id="accel-y">-- m/s²</span>
+          </div>
+        </div> <!-- Fim sensor-block -->
+        </div> <!-- Fim tel-panel -->
+
+        <!-- Minimapa da Missão -->
+        <div class="map-panel">
+          <div class="tel-title">MAPA DA MISSÃO (PERCURSO)</div>
+          <div class="map-img-wrap">
+            <img src="/assets/mapa_percurso.png" alt="Mapa do Percurso">
+          </div>
+        </div>
+
+      </div> <!-- Fim sidebar-container -->
+    </div> <!-- Fim dash-main -->
+
+  </section>
+
+  <!-- ══════════════════ DOSSIÊ TÉCNICO A3 & SIMULAÇÕES ══════════════════ -->
+  <section id="simulacoes" class="section">
+    <div class="section-header">
+      <h2>DOSSIÊ TÉCNICO A3: PROJETO NEURODRIVE</h2>
+      <span class="section-sub">"Avaliação A3: Desenvolvimento de projeto e solução digital para tangibilizar o desempenho de compreensão em fenômenos físicos elétricos, magnéticos e oscilatórios."</span>
+      <button class="ctrl-btn" style="margin-top: 16px; background: rgba(56, 189, 248, 0.2); font-size: 0.9rem; padding: 12px 24px;" onclick="document.getElementById('modal-dossie').showModal()">📄 ABRIR DOSSIÊ TÉCNICO OFICIAL</button>
+    </div>
+
+    <div class="sim-grid">
+      <!-- 1 -->
+      <div class="sim-card">
+        <div class="sim-img-wrap">
+          <img src="/assets/simulations/faraday_motor_response.png" alt="Lei de Faraday">
+        </div>
+        <div class="sim-content">
+          <h3>Lei de Faraday & Indutância</h3>
+          <p>Modelagem da força contra-eletromotriz do motor DC e avaliação dos fenômenos magnéticos da bobina.</p>
+          <div class="sim-tags">
+            <span class="tag">Analisar Fenômenos Eletromagnéticos</span>
+            <span class="tag">Condução de Experimentos</span>
+          </div>
+        </div>
+      </div>
+      <!-- 2 -->
+      <div class="sim-card">
+        <div class="sim-img-wrap">
+          <img src="/assets/simulations/rlc_resonancia.png" alt="Circuito RLC">
+        </div>
+        <div class="sim-content">
+          <h3>Ressonância RLC</h3>
+          <p>Cálculo da frequência natural do sistema e compreensão de fenômenos oscilatórios sub e super amortecidos.</p>
+          <div class="sim-tags">
+            <span class="tag">Fenômenos Oscilatórios</span>
+            <span class="tag">Formular Soluções</span>
+          </div>
+        </div>
+      </div>
+      <!-- 3 -->
+      <div class="sim-card">
+        <div class="sim-img-wrap">
+          <img src="/assets/simulations/fft_analise_frequencia.png" alt="Análise FFT">
+        </div>
+        <div class="sim-content">
+          <h3>Análise Harmônica (FFT)</h3>
+          <p>Transformada de Fourier para identificar ruídos e componentes de frequência. Avaliação de THD (Total Harmonic Distortion).</p>
+          <div class="sim-tags">
+            <span class="tag">Metodologia Científica</span>
+            <span class="tag">Interpretar Resultados</span>
+          </div>
+        </div>
+      </div>
+      <!-- 4 -->
+      <div class="sim-card">
+        <div class="sim-img-wrap">
+          <img src="/assets/simulations/pwm_analise.png" alt="Sinal PWM">
+        </div>
+        <div class="sim-content">
+          <h3>Controle de Potência (PWM)</h3>
+          <p>Modulação por largura de pulso aplicada no acionamento eletrônico, analisando a resposta dinâmica da corrente.</p>
+          <div class="sim-tags">
+            <span class="tag">Novas Tecnologias</span>
+            <span class="tag">Projetos Práticos</span>
+          </div>
+        </div>
+      </div>
+      <!-- 5 -->
+      <div class="sim-card">
+        <div class="sim-img-wrap">
+          <img src="/assets/simulations/simulacao_3_eficiencia.png" alt="Eficiência do Motor">
+        </div>
+        <div class="sim-content">
+          <h3>Dinâmica e Eficiência (Motor DC)</h3>
+          <p>Simulação mecânica e elétrica do motor avaliando inércia, atrito de Coulomb e curva de eficiência energética.</p>
+          <div class="sim-tags">
+            <span class="tag">Trabalho Multidisciplinar</span>
+            <span class="tag">Dimensões Quantitativas</span>
+          </div>
+        </div>
+      </div>
+      <!-- 6 -->
+      <div class="sim-card">
+        <div class="sim-img-wrap">
+          <img src="/assets/simulations/analise_bateria.png" alt="Modelo da Bateria">
+        </div>
+        <div class="sim-content">
+          <h3>Modelo Bateria de Li-ion</h3>
+          <p>Estimativa de curva de descarga, limite de corrente e impactos da durabilidade energética no desempenho do projeto.</p>
+          <div class="sim-tags">
+            <span class="tag">Impactos Socioambientais</span>
+            <span class="tag">Modelagem Simbólica e Física</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ EQUIPE ══════════════════ -->
+  <section id="equipe" class="section">
+    <div class="section-header">
+      <h2>NOSSA EQUIPE</h2>
+      <span class="section-sub">Os engenheiros por trás do NeuroDrive</span>
+    </div>
+
+    <div class="team-grid">
+      <div class="team-card team-card--lead">
+        <div class="team-avatar-wrap">
+          <img src="/assets/team/eduardo.jpg" alt="Eduardo"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="team-avatar-placeholder" style="display:none;background:linear-gradient(135deg,#0ea5e9,#0055FF)">💻</div>
+        </div>
+        <div class="team-name">Eduardo</div>
+        <div class="team-role-badge">LEAD DEV</div>
+        <div class="team-role">Engenheiro de Software<br><span class="team-role-detail">Sistema digital completo — web, telemetria &amp; firmware</span><span class="team-role-detail">Colaboração na maquete física</span></div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-avatar-wrap">
+          <img src="/assets/team/daniel.jpg" alt="Daniel"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="team-avatar-placeholder" style="display:none;background:linear-gradient(135deg,#FF6B35,#CC2200)">⚡</div>
+        </div>
+        <div class="team-name">Daniel</div>
+        <div class="team-role">Prototipagem Física<br><span class="team-role-detail">Eletrônica e Montagem</span></div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-avatar-wrap">
+          <img src="/assets/team/arthur.jpg" alt="Arthur"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="team-avatar-placeholder" style="display:none;background:linear-gradient(135deg,#7B68EE,#5500CC)">📐</div>
+        </div>
+        <div class="team-name">Arthur</div>
+        <div class="team-role">Prototipagem Física<br><span class="team-role-detail">Preparação e Logística</span></div>
+      </div>
+
+      <div class="team-card">
+        <div class="team-avatar-wrap">
+          <img src="/assets/team/oliver.jpg" alt="Oliver"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="team-avatar-placeholder" style="display:none;background:linear-gradient(135deg,#10b981,#006633)">🎨</div>
+        </div>
+        <div class="team-name">Oliver</div>
+        <div class="team-role">Prototipagem Física<br><span class="team-role-detail">Pintura e Estrutura 3D</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════ GALERIA ══════════════════ -->
+  <section id="galeria" class="section section-alt">
+    <div class="section-header">
+      <h2>GALERIA DA MAQUETE</h2>
+      <span class="section-sub">Maquete física em escala 1:30 (escala real medida) · celeiro, hortas e lote</span>
+    </div>
+
+    <div id="gallery-grid" class="gallery-grid">
+      <div class="gallery-empty" id="gallery-empty">
+        Adicione fotos em <code>web/assets/gallery/</code> e reinicie o servidor.
+      </div>
+    </div>
+  </section>
+
+  <!-- Lightbox -->
+  <dialog id="lightbox">
+    <button class="lightbox-close" id="lightbox-close">✕</button>
+    <img id="lightbox-img" src="" alt="">
+    <div id="lightbox-caption"></div>
+  </dialog>
+
+  <!-- Dossiê Modal -->
+  <dialog id="modal-dossie" style="background: rgba(15, 23, 42, 0.95); color: #f8fafc; border: 1px solid #38bdf8; border-radius: 12px; padding: 32px; max-width: 800px; max-height: 80vh; overflow-y: auto; backdrop-filter: blur(10px);">
+    <button class="lightbox-close" onclick="document.getElementById('modal-dossie').close()" style="position: absolute; top: 16px; right: 16px;">✕</button>
+    
+    <h2 style="color: #38bdf8; letter-spacing: 2px; margin-bottom: 8px;">DOSSIÊ TÉCNICO A3: INTEGRAÇÃO MULTIDISCIPLINAR (NEURODRIVE)</h2>
+    <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 24px;">"Desenvolvimento de projeto e solução digital tangível para as UCs de Fenômenos Físicos/Eletromagnéticos e Modelos Matemáticos/Álgebra Linear."</p>
+
+    <h3 style="color: #10b981; margin-bottom: 8px;">1. Justificativa do Projeto (Metas de Compreensão)</h3>
+    <p style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 16px;">O Neurodrive é uma solução digital tangível que unifica duas grandes frentes: <strong>Física Eletromagnética/Oscilatória</strong> (motor DC, sensores e PWM) e <strong>Cálculo Diferencial/Álgebra Linear</strong> (modelos matemáticos, matrizes computacionais e resolução numérica). A maquete em escala 1:30 serve como laboratório experimental para atuar na concepção e condução de experimentos reais e modelagens.</p>
+
+    <h3 style="color: #10b981; margin-bottom: 8px;">2. Tangibilização de Física, Eletrodinâmica e Oscilações</h3>
+    <ul style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 16px; padding-left: 20px;">
+      <li style="margin-bottom: 8px;"><strong>Lei de Faraday, Motores DC e Eletrodinâmica:</strong> Avaliação da força contra-eletromotriz, do comportamento de cargas e das Leis de Kirchhoff nos circuitos em corrente contínua do sistema da maquete.</li>
+      <li style="margin-bottom: 8px;"><strong>Circuitos e PWM:</strong> Aplicação do controle de potência (Pulse Width Modulation) analisando medidas de grandezas elétricas.</li>
+      <li style="margin-bottom: 8px;"><strong>Circuitos RLC e Oscilações:</strong> Estudo de circuitos RL e RLC em corrente alternada e fenômenos oscilatórios, simulando a filtragem do ruído magnético e estabilidade do motor.</li>
+    </ul>
+
+    <h3 style="color: #10b981; margin-bottom: 8px;">3. Tangibilização de Álgebra Linear, Matrizes e Cálculo</h3>
+    <ul style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 16px; padding-left: 20px;">
+      <li style="margin-bottom: 8px;"><strong>Cálculo Diferencial e Equações Diferenciais:</strong> Solução de equações diferenciais de primeira e segunda ordem (modelos matemáticos e numéricos) para simular o comportamento da bateria e as correntes induzidas do motor DC.</li>
+      <li style="margin-bottom: 8px;"><strong>Matrizes e Sistemas Lineares (Algoritmos Numéricos):</strong> O processamento do painel (Odometria Visual) utiliza extensivamente cálculos vetoriais e algoritmos sobre matrizes na linguagem Python/OpenCV para extrair fluxos e geometria em tempo real.</li>
+      <li style="margin-bottom: 8px;"><strong>Números Complexos e Gráficos:</strong> Geração autônoma de gráficos complexos (seno, cosseno, espectro) por meio de softwares (Matplotlib/SciPy), empregando ferramentas como Transformada Rápida de Fourier (FFT) embasada em álgebra de números complexos para separar harmônicas.</li>
+    </ul>
+
+    <h3 style="color: #10b981; margin-bottom: 8px;">4. Conclusão</h3>
+    <p style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 16px;">Todo o código-fonte desenvolvido, assim como as simulações executadas pela Metodologia Científica, consolidam uma plataforma completa. Atendemos com êxito as competências de análise de circuitos, vetores, e uso de ferramentas de simulação aplicadas a sistemas reais e integrados.</p>
+    
+    <div style="text-align: center; margin-top: 32px; padding-top: 16px; border-top: 1px solid #334155; color: #38bdf8; font-weight: bold;">
+      PROJETO APROVADO E VALIDADO EXPERIMENTALMENTE
+    </div>
+  </dialog>
+
+  <!-- ══════════════════ FOOTER ══════════════════ -->
+  <footer>
+    <span>⬡ NEURODRIVE OS v3.0 &nbsp;·&nbsp; Escala medida 1:30 (faixa válida: 1:24–1:64) &nbsp;·&nbsp; Odometria Visual</span>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
