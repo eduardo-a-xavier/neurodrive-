@@ -66,6 +66,8 @@ const MODO_CORES = {
   listras:  '#00FF88',
   demo:     '#FF4444',
 };
+let smoothVoltage = 3.7;
+let smoothCurrent = 0.3;
 
 function atualizarTelemetria(d) {
   setText('vel-inst', formatVel(d.vel_inst));
@@ -87,24 +89,33 @@ function atualizarTelemetria(d) {
   else if (q > 10) { elQual.textContent = `MÉDIO (${q})`;  elQual.style.color = '#FFA500'; }
   else             { elQual.textContent = `FRACO (${q})`;   elQual.style.color = '#FF4444'; }
 
-  // Simulação Eletroeletrônica da Bateria em Tempo Real (Sag de Voltagem e Potência)
+  // Simulação Eletroeletrônica da Bateria (Filtro Passa-Baixa para Suavidade)
   const speedVal = Math.abs(d.vel_inst ?? 0);
-  const iBase = 0.3; // Corrente idle do embarcado
-  let current = iBase + (speedVal / 40.0) * 0.7 + (Math.random() * 0.05);
-  if (current > 1.0) current = 1.0; // Teto de 1A conforme especificações
+  const iBase = 0.3; // Corrente idle
+  
+  // Corrente alvo (cálculo instantâneo)
+  let targetCurrent = iBase + (speedVal / 40.0) * 0.7;
+  if (targetCurrent > 1.0) targetCurrent = 1.0;
+  
+  // Amortecimento sistêmico (filtro passa-baixa: inércia térmica/elétrica)
+  smoothCurrent = (smoothCurrent * 0.95) + (targetCurrent * 0.05);
   
   const vNominal = 3.7;
-  const rInternal = 0.4; // Resistência interna estimada para gerar queda de tensão
-  let voltage = vNominal - (current * rInternal) + (Math.random() * 0.01);
+  const rInternal = 0.4;
+  let targetVoltage = vNominal - (smoothCurrent * rInternal);
+  smoothVoltage = (smoothVoltage * 0.95) + (targetVoltage * 0.05);
   
-  const power = voltage * current;
+  // Ruído mínimo para realismo do ADC, aplicado APÓS o filtro
+  const displayCurrent = smoothCurrent + (Math.random() * 0.005);
+  const displayVoltage = smoothVoltage + (Math.random() * 0.005);
+  const power = displayVoltage * displayCurrent;
 
-  setText('bat-tensao', `${voltage.toFixed(2)} V`);
-  setText('bat-corrente', `${current.toFixed(2)} A`);
+  setText('bat-tensao', `${displayVoltage.toFixed(2)} V`);
+  setText('bat-corrente', `${displayCurrent.toFixed(2)} A`);
   setText('bat-potencia', `${power.toFixed(2)} W`);
   
   // Efeito visual de alerta no HUD de bateria
-  document.getElementById('bat-tensao').style.color = voltage < 3.5 ? '#f43f5e' : '#fff';
+  document.getElementById('bat-tensao').style.color = displayVoltage < 3.5 ? '#f43f5e' : '#fff';
   // Bloco sensor celular
   const sensorBlock = document.getElementById('sensor-block');
   const sensorSep   = document.getElementById('sensor-sep');
