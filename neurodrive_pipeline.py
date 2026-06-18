@@ -122,7 +122,7 @@ class AsyncIPCamera:
 
 ARQUIVO_CALIBRACAO   = "calibracao_neurodrive.json"
 VEL_MAX_CARRINHO_KMH = 30.0   # Velocidade máxima real do carrinho (spec fabricante)
-ESCALA_MAQUETE       = 30.0   # Escala 1:30 (escala real medida)
+ESCALA_MAQUETE       = 24.0   # Escala 1:24 (escala real medida)
 
 class OdometriaVisual:
     def __init__(self, escala=ESCALA_MAQUETE):

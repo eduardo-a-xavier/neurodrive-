@@ -1,7 +1,7 @@
 {
   "name": "NeuroDrive Dashboard",
   "short_name": "NeuroDrive",
-  "description": "Telemetria e feed ao vivo do veículo autônomo em escala 1:30",
+  "description": "Telemetria e feed ao vivo do veículo autônomo em escala 1:24",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

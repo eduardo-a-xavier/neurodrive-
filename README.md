@@ -2,7 +2,7 @@
 
 **Neurodrive** é um projeto de integração em IoT e Visão Computacional criado como Solução Digital (A3) para atender integralmente às Unidades Curriculares de **Fenômenos elétricos, magnéticos e oscilatórios** e de **Modelagem e simulação de sistemas elétricos e magnéticos (0005315)**.
 
-Através de uma maquete física (escala 1:30) operada via smartphone, o sistema processa imagens e sensores em tempo real, extraindo a odometria e projetando os dados num *dashboard* web responsivo.
+Através de uma maquete física (escala 1:24) operada via smartphone, o sistema processa imagens e sensores em tempo real, extraindo a odometria e projetando os dados num *dashboard* web responsivo.
 
 ## ⚙️ Tecnologias e Ementa Aplicada
 
