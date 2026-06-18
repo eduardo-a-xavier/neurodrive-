@@ -445,7 +445,8 @@ async function connectCam() {
   }
 
   const img = document.getElementById('stream');
-  // HACK SUPREMO ZERO DELAY: O Chrome agora bebe a imagem diretamente da fonte (celular), nunca mais do Python!
+  // Estabelece conexão direta com o feed de vídeo, reduzindo o processamento no backend
+  // e mitigando a latência da interface.
   img.src = url;
   img.style.display = 'block';
   

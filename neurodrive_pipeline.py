@@ -56,7 +56,7 @@ def iniciar_servidor_sensores():
 threading.Thread(target=iniciar_servidor_sensores, daemon=True).start()
 
 # ==============================================================================
-#  CLASSE ASYNC IP CAMERA (Zero Delay / 4GB RAM Otimizado)
+#  CLASSE ASYNC IP CAMERA (Processamento Assíncrono para Mitigação de Latência)
 # ==============================================================================
 class AsyncIPCamera:
     def __init__(self, url):
@@ -72,9 +72,9 @@ class AsyncIPCamera:
         import urllib.request
         import socket
         
-        # Modifica a URL de stream infinito para snapshot unico (o IP Webcam expoe isso).
-        # Isso anula o bug do TCP Buffer que enfileira frames e gera delay "crescente e forte".
-        # Com o snapshot, sempre pegamos a imagem atualíssima.
+        # Solicitação de frames discretos (snapshot) em vez de stream contínuo.
+        # Esta abordagem previne o enfileiramento de pacotes (buffer TCP),
+        # garantindo que o algoritmo de visão processe apenas o estado atual (latência mitigada).
         is_ipwebcam = self.url.endswith("/video")
         shot_url = self.url.replace("/video", "/shot.jpg") if is_ipwebcam else self.url
         
@@ -99,12 +99,12 @@ class AsyncIPCamera:
                             self.frame = frame
                         self.new_frame_event.set()
                 
-                # Pequeno respiro (aprox 60fps) para nao gerar recusa de conexao no Android
+                # Pausa para controle de fluxo (prevenção de negação de serviço no dispositivo móvel)
                 time.sleep(0.015)
             except Exception as e:
-                # O host recusou ou o Wi-Fi soluçou
-                print(f"[AsyncIPCamera] Wi-Fi oscilou, pegando nova foto... ({e})")
-                time.sleep(0.1) # Evita sobrecarga no celular (DDOS) caso ele recuse ativamente
+                # Tratamento de exceção de rede
+                print(f"[AsyncIPCamera] Oscilação de rede detectada, reconectando... ({e})")
+                time.sleep(0.1) # Intervalo de segurança (backoff)
 
     def get_frame(self):
         if self.new_frame_event.wait(timeout=1.0):
@@ -117,7 +117,7 @@ class AsyncIPCamera:
         self.running = False
 
 # ==============================================================================
-#  NEURODRIVE OS v4.0 - Ultra Performance Edition
+#  CLASSE ODOMETRIA VISUAL (Análise Cinemática e Vetorial)
 # ==============================================================================
 
 ARQUIVO_CALIBRACAO   = "calibracao_neurodrive.json"
@@ -243,10 +243,10 @@ class OdometriaVisual:
         self.historico_recente.clear()
 
     # ──────────────────────────────────────────────────────────────────
-    #  OPTICAL FLOW DE ULTRA-BAIXO CONSUMO (CPU SAVER)
+    #  CÁLCULO DO FLUXO ÓPTICO (Algoritmo de Lucas-Kanade)
     # ──────────────────────────────────────────────────────────────────
     def _extrair_flow(self, frame_cinza_atual, frame_debug):
-        # Downscale inteligente: Rodamos o Flow em 50% para usar quase NADA de CPU!
+        # Redução de dimensionalidade (downscale) para otimização da carga de processamento matricial.
         SCALE_FACTOR = 0.5 
         
         h_orig, w_orig = frame_cinza_atual.shape
@@ -273,7 +273,7 @@ class OdometriaVisual:
                 frame_cinza_small, mask=mascara, maxCorners=100, qualityLevel=0.1, minDistance=10, blockSize=7)
             return None, 0
 
-        # Calculo ultra-rápido nas maxCorners=100 em 640x360
+        # Resolução numérica e rastreamento iterativo dos vetores no espaço transformado.
         pontos_novos, status, _ = cv2.calcOpticalFlowPyrLK(
             self.frame_cinza_anterior, frame_cinza_small,
             self.pontos_rastreados, None,
@@ -325,7 +325,7 @@ class OdometriaVisual:
         return mediana_px, n_bons
 
     # ──────────────────────────────────────────────────────────────────
-    #  PAINEL HUD ROI (Zero CPU Drop)
+    #  RENDERIZAÇÃO DO PAINEL HUD (Modelagem de Regiões de Interesse)
     # ──────────────────────────────────────────────────────────────────
     def _desenhar_grafico(self, frame, x, y, larg, alt):
         roi = frame[y:y+alt, x:x+larg]
