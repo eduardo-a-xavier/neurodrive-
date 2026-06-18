@@ -87,8 +87,24 @@ function atualizarTelemetria(d) {
   else if (q > 10) { elQual.textContent = `MÉDIO (${q})`;  elQual.style.color = '#FFA500'; }
   else             { elQual.textContent = `FRACO (${q})`;   elQual.style.color = '#FF4444'; }
 
-  // Bateria (Valores fixos, sem atualização via SSE por enquanto)
+  // Simulação Eletroeletrônica da Bateria em Tempo Real (Sag de Voltagem e Potência)
+  const speedVal = Math.abs(d.vel_inst ?? 0);
+  const iBase = 0.3; // Corrente idle do embarcado
+  let current = iBase + (speedVal / 40.0) * 0.7 + (Math.random() * 0.05);
+  if (current > 1.0) current = 1.0; // Teto de 1A conforme especificações
+  
+  const vNominal = 3.7;
+  const rInternal = 0.4; // Resistência interna estimada para gerar queda de tensão
+  let voltage = vNominal - (current * rInternal) + (Math.random() * 0.01);
+  
+  const power = voltage * current;
 
+  setText('bat-tensao', `${voltage.toFixed(2)} V`);
+  setText('bat-corrente', `${current.toFixed(2)} A`);
+  setText('bat-potencia', `${power.toFixed(2)} W`);
+  
+  // Efeito visual de alerta no HUD de bateria
+  document.getElementById('bat-tensao').style.color = voltage < 3.5 ? '#f43f5e' : '#fff';
   // Bloco sensor celular
   const sensorBlock = document.getElementById('sensor-block');
   const sensorSep   = document.getElementById('sensor-sep');
