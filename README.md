@@ -1,6 +1,6 @@
 # ⬡ NEURODRIVE: Plataforma Experimental de Física e Álgebra Linear
 
-**Neurodrive** é um projeto de integração em IoT e Visão Computacional criado como Solução Digital (A3) para as Unidades Curriculares de Fenômenos Físicos Eletromagnéticos e Modelagem Matemática/Álgebra Linear.
+**Neurodrive** é um projeto de integração em IoT e Visão Computacional criado como Solução Digital (A3), com foco na Unidade Curricular de **Fenômenos elétricos, magnéticos e oscilatórios**. Paralelamente, atende aos requisitos de **Modelagem e simulação de sistemas elétricos e magnéticos (0005315)**.
 
 Através de uma maquete física (escala 1:30) operada via smartphone, o sistema processa imagens e sensores em tempo real, extraindo a odometria e projetando os dados num *dashboard* web responsivo.
 
