@@ -241,15 +241,6 @@ python analise_bateria.py               # Gera analise_bateria.png
 
 ---
 
-## Equipe
-
-| | | | |
-|:---:|:---:|:---:|:---:|
-| ![Eduardo](web/assets/team/Eduardo.jpg) | ![Arthur](web/assets/team/Arthur.jpg) | ![Daniel](web/assets/team/Daniel.jpg) | ![Oliver](web/assets/team/oliver.jpg) |
-| Eduardo Xavier | Arthur | Daniel | Oliver |
-
----
-
 <div align="center">
 
 **UniRitter · Engenharia de Software · 2026/1**  
