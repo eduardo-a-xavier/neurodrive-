@@ -1,37 +1,258 @@
-# ⬡ NEURODRIVE: Plataforma Experimental de Física e Álgebra Linear
+<div align="center">
 
-**Neurodrive** é um projeto de integração em IoT e Visão Computacional criado como Solução Digital (A3) para atender integralmente às Unidades Curriculares de **Fenômenos elétricos, magnéticos e oscilatórios** e de **Modelagem e simulação de sistemas elétricos e magnéticos (0005315)**.
+# ⬡ NeuroDrive
+### Plataforma Experimental de IoT e Visão Computacional
 
-Através de uma maquete física (escala 1:24) operada via smartphone, o sistema processa imagens e sensores em tempo real, extraindo a odometria e projetando os dados num *dashboard* web responsivo.
+*Solução Digital (A3) — Fenômenos Elétricos, Magnéticos e Oscilatórios*  
+*UniRitter 2026/1 · 🥉 3º Lugar — A Jornada UniRitter 2026 · Certificado de Honra ao Mérito*
 
-## ⚙️ Tecnologias e Ementa Aplicada
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=flat-square&logo=python&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-4.8+-5C3EE8?style=flat-square&logo=opencv&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.0+-000000?style=flat-square&logo=flask&logoColor=white)
+![SciPy](https://img.shields.io/badge/SciPy-1.11+-8CAAE6?style=flat-square&logo=scipy&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
 
-- **Cálculo Diferencial e Equações Diferenciais:** Simulações e resoluções numéricas (`scipy.integrate.odeint`) de equações de 1ª e 2ª ordem para modelar a Força Contra-Eletromotriz do motor DC e circuitos RLC.
-- **Álgebra Linear e Matrizes:** Processamento em tempo real do sinal de vídeo utilizando OpenCV e NumPy, aplicando transformações em matrizes (Optical Flow) e álgebra vetorial para calcular a velocidade de deslocamento.
-- **Física Eletromagnética:** Avaliação prática da Lei de Faraday no motor, correntes induzidas e estudo de controle de potência utilizando PWM (Modulação por Largura de Pulso) aplicado em Eletrodinâmica.
-- **Números Complexos:** Implementação da Transformada Rápida de Fourier (FFT) em sinais reais para isolar frequências harmônicas, essencial no estudo de fenômenos oscilatórios.
-
-## 🚀 Como Executar o Projeto
-
-**Pré-requisitos:** Python 3.10+
-
-1. Clone este repositório ou faça o download dos arquivos.
-2. No terminal (dentro da pasta do projeto), instale todas as dependências:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Inicie o Servidor Central:
-   ```bash
-   python web_server.py
-   ```
-4. Acesse o **Dashboard Cyberpunk** através do seu navegador em `http://localhost:5000`.
-
-## 📁 Estrutura do Código-Fonte
-
-- `web_server.py`: Servidor HTTP desenvolvido em Flask. Mantém a conexão EventSource (SSE) com latência nula (bypass stream).
-- `neurodrive_pipeline.py`: O "cérebro" matemático. Contém a classe `OdometriaVisual`, que resolve matrizes frame a frame e aplica os cálculos cinemáticos no fluxo de vídeo.
-- `web/`: Diretório contendo a interface em HTML5, JavaScript vanilla (`app.js`) e CSS moderno (`style.css`), desenhada com UX responsiva e metodologia científica.
-- `analise_frequencia.py` e simuladores: Scripts paralelos de cálculo numérico (SciPy) para a geração de gráficos matemáticos a respeito das frequências de ruído, RLC e circuitos.
+</div>
 
 ---
-**Projeto desenvolvido como desempenho de compreensão para a Avaliação A3.**
+
+## O que é
+
+NeuroDrive é um sistema embarcado de telemetria que integra **visão computacional**, **sensores de smartphone** e **simulações eletromagnéticas** aplicadas a uma maquete física na escala **1:24**.
+
+A câmera do celular transmite vídeo via Wi-Fi para um servidor Flask, que processa cada frame em tempo real usando o algoritmo de **Lucas-Kanade (Optical Flow)** para extrair odometria visual — velocidade instantânea, aceleração e histórico de corrida. Os dados são transmitidos ao dashboard via **SSE (Server-Sent Events)** e exibidos num velocímetro HUD renderizado com OpenCV.
+
+Em paralelo, scripts SciPy simulam os fenômenos eletromagnéticos reais do motor e circuito: Força Contra-Eletromotriz, ressonância RLC e análise de harmônicas por FFT.
+
+---
+
+## Fotos da Maquete
+
+<div align="center">
+
+| Vista Frontal | Perspectiva Lateral |
+|:---:|:---:|
+| ![Frente](web/assets/gallery/maquete_frente_celeiro.jpg) | ![Lateral](web/assets/gallery/maquete_perspectiva_lateral.jpg) |
+| Vista Direita | Vista Esquerda |
+| ![Direita](web/assets/gallery/maquete_vista_direita.jpg) | ![Esquerda](web/assets/gallery/maquete_vista_esquerda.jpg) |
+
+</div>
+
+---
+
+## Arquitetura do Sistema
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  SMARTPHONE                                                 │
+│  ┌──────────────┐   ┌─────────────────┐                    │
+│  │ IP Webcam    │   │  Sensor Logger  │                    │
+│  │ /video (MJPEG)│  │  Acelerômetro   │                    │
+│  │ /shot.jpg    │   │  GPS Speed      │                    │
+│  └──────┬───────┘   └────────┬────────┘                    │
+└─────────┼────────────────────┼────────────────────────────-┘
+          │ HTTP Wi-Fi         │ HTTP POST /data
+          ▼                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│  WEB_SERVER.PY (Flask)                                      │
+│                                                             │
+│  AsyncIPCamera ──► neurodrive_pipeline.py                   │
+│  (Zero-Delay)       │                                       │
+│                     │  OdometriaVisual                      │
+│                     │  ├─ Lucas-Kanade Optical Flow         │
+│                     │  ├─ Calibração px→mm persistida       │
+│                     │  ├─ Modo: real / sensor / listras     │
+│                     │  └─ HUD velocímetro (OpenCV)          │
+│                     │                                       │
+│  /video ────────────┤  MJPEG stream                        │
+│  /api/telemetria ───┘  SSE 10Hz (JSON)                      │
+│  /api/config_camera    POST                                 │
+└─────────────────────────────────────────────────────────────┘
+          │
+          ▼
+┌─────────────────────────┐
+│  web/index.html          │
+│  Dashboard PWA           │
+│  Velocímetro · G-meter   │
+│  Histórico · Telemetria  │
+└─────────────────────────┘
+```
+
+---
+
+## Módulos de Simulação (Física Aplicada)
+
+Os scripts a seguir resolvem numericamente os fenômenos eletromagnéticos do motor DC do carrinho (RENLONG 14500, 3.7V/500mAh, R=3Ω).
+
+### `motor_simulation_v2_faraday.py` — Lei de Faraday e BEMF
+
+Modelo eletromagnético completo via `scipy.integrate.odeint`:
+
+```
+V_entrada = I×R + L×(dI/dt) + ε_induzida
+ε_induzida = K_e × ω          (Força Contra-Eletromotriz — Lei de Faraday)
+τ = K_t × I                   (Torque)
+J×(dω/dt) = τ - b×ω           (Dinâmica rotacional)
+```
+
+Com motor travado (ω=0): I_max = V/R = 3.0/3.0 = **1.0 A**  
+Em regime estacionário (ω>0): corrente cai conforme BEMF cresce.
+
+![Resposta Faraday](web/assets/simulations/faraday_motor_response.png)
+
+---
+
+### `circuito_rlc.py` — Ressonância e Amortecimento
+
+Circuito RLC série com parâmetros medidos do carrinho:
+
+| Parâmetro | Valor |
+|---|---|
+| R (motor) | 3 Ω |
+| L (indutância bobina) | 0,5 mH |
+| C (capacitor filtro) | 100 µF |
+| **f₀ = 1/(2π√LC)** | **~225 Hz** |
+| ζ = R/(2√(L/C)) | Sub-amortecido (oscilatório) |
+
+![RLC](web/assets/simulations/rlc_resonancia.png)
+
+---
+
+### `analise_frequencia.py` — FFT e Harmônicas
+
+Análise espectral da corrente do motor usando Transformada Rápida de Fourier:
+
+```
+X[k] = Σ(n=0 a N-1) x[n] × e^(-j2πkn/N)
+```
+
+- Janela de Hanning para redução de vazamento espectral  
+- Cálculo de THD (Total Harmonic Distortion)  
+- Detecção de 3ª e 5ª harmônicas (ruído de chaveamento PWM)
+
+![FFT](web/assets/simulations/fft_analise_frequencia.png)
+
+---
+
+### `pwm_analise.py` — Controle PWM
+
+Modelagem do controle de potência via Modulação por Largura de Pulso aplicada ao motor DC (Eletrodinâmica).
+
+![PWM](web/assets/simulations/pwm_analise.png)
+
+---
+
+### `analise_bateria.py` — Curva de Descarga
+
+Simulação da autonomia e curva de descarga da bateria LiPo 3.7V/500mAh.
+
+![Bateria](web/assets/simulations/analise_bateria.png)
+
+---
+
+## Pipeline de Visão Computacional
+
+**`neurodrive_pipeline.py` — Classe `OdometriaVisual`**
+
+```python
+# 1. Downscale 50% para reduzir carga matricial
+frame_small = cv2.resize(frame, (w//2, h//2))
+
+# 2. Região de interesse trapezoidal (perspectiva de pista)
+mascara = np.zeros_like(frame_small)
+cv2.fillPoly(mascara, pts_trapezio, 255)
+
+# 3. Lucas-Kanade Optical Flow
+pontos_novos, status, _ = cv2.calcOpticalFlowPyrLK(
+    frame_anterior, frame_atual, pontos_rastreados, None,
+    winSize=(15,15), maxLevel=2
+)
+
+# 4. Mediana dos deslocamentos → velocidade física
+desl_mm = mediana_px * fator_px_mm          # calibração px→mm
+velocidade = (desl_mm / 1000.0 / delta_t) * 3.6 * escala  # km/h
+```
+
+**Modos de operação:**
+
+| Modo | Fonte de dados |
+|---|---|
+| `real` | Optical Flow calibrado (px→mm) |
+| `sensor` | Acelerômetro + GPS do smartphone |
+| `listras` | Detecção de faixas no piso (HSV) |
+| `demo` | Simulação automática |
+| `simulado` | Flow proporcional sem calibração |
+
+**Atalhos em tempo real:**
+
+| Tecla | Ação |
+|---|---|
+| `C` | Iniciar/finalizar calibração px→mm |
+| `S` | Alternar modo de odometria |
+| `L` | Alternar layout HUD (velocímetro / cyber) |
+| `I` | Ligar/desligar IA (Optical Flow) |
+| `R` | Resetar estatísticas |
+| `Q` | Encerrar |
+
+---
+
+## Instalação e Uso
+
+**Pré-requisitos:** Python 3.10+, smartphone com [IP Webcam](https://play.google.com/store/apps/details?id=com.pas.webcam) ou [Sensor Logger](https://apps.apple.com/app/sensor-logger/id1531582925)
+
+```bash
+# 1. Clone o repositório
+git clone https://github.com/eduardo-a-xavier/neurodrive-.git
+cd neurodrive-
+
+# 2. Instale as dependências
+pip install -r requirements.txt
+
+# 3. Configure o IP da câmera (opcional — pode configurar pelo dashboard)
+echo "CAMERA_IP=192.168.x.x:8080" > .env
+
+# 4. Inicie o servidor
+python web_server.py
+```
+
+Acesse `http://localhost:5000` (ou o IP local exibido no terminal).
+
+**Para rodar as simulações individualmente:**
+```bash
+python motor_simulation_v2_faraday.py   # Gera faraday_motor_response.png
+python circuito_rlc.py                  # Gera rlc_resonancia.png
+python analise_frequencia.py            # Gera fft_analise_frequencia.png
+python pwm_analise.py                   # Gera pwm_analise.png
+python analise_bateria.py               # Gera analise_bateria.png
+```
+
+---
+
+## Ementa Aplicada
+
+| Conteúdo | Aplicação no Projeto |
+|---|---|
+| Cálculo Diferencial / EDOs | `odeint` para BEMF e circuito RLC |
+| Álgebra Linear / Matrizes | Optical Flow — transformações frame a frame |
+| Eletromagnetismo / Faraday | Modelo BEMF do motor DC, correntes induzidas |
+| Fenômenos Oscilatórios | Circuito RLC, frequência natural f₀ = 225 Hz |
+| Números Complexos / Fourier | FFT com janela Hanning, cálculo de THD |
+| PWM / Eletrodinâmica | Controle de potência do motor por PWM |
+
+---
+
+## Equipe
+
+| | | | |
+|:---:|:---:|:---:|:---:|
+| ![Eduardo](web/assets/team/Eduardo.jpg) | ![Arthur](web/assets/team/Arthur.jpg) | ![Daniel](web/assets/team/Daniel.jpg) | ![Oliver](web/assets/team/oliver.jpg) |
+| Eduardo Xavier | Arthur | Daniel | Oliver |
+
+---
+
+<div align="center">
+
+**UniRitter · Engenharia de Software · 2026/1**  
+*Projeto desenvolvido para Avaliação A3 — Fenômenos Elétricos, Magnéticos e Oscilatórios*
+
+</div>
